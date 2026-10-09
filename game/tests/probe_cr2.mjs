@@ -1,0 +1,14 @@
+import { chromium } from 'playwright-core';
+const browser = await chromium.launch({ args: ['--use-gl=swiftshader', '--enable-unsafe-swiftshader', '--no-sandbox'] });
+const page = await browser.newPage({ viewport: { width: 960, height: 540 } });
+await page.goto(new URL('../dist/neon-warden_V2.html', import.meta.url).href);
+await page.waitForTimeout(5200);
+await page.keyboard.press('Enter'); await page.waitForTimeout(900);
+const step = async (k, w=250) => { await page.keyboard.press(k); await page.waitForTimeout(w);
+  console.log(k, await page.evaluate(() => ({ sel: document.querySelector('#crPaths .crPath.sel')?.dataset.i, hint: document.getElementById('crHint')?.textContent?.slice(0,12), active: document.activeElement?.id || document.activeElement?.tagName }))); };
+await step('Digit2');
+await step('Tab');
+await step('Tab');
+await step('KeyS');
+await step('KeyS');
+await browser.close();

@@ -1,0 +1,54 @@
+
+<script>(function(){
+  // DIAG: any startup exception becomes visible text (no more silent grey screens)
+  window.__NW_ERR=null;
+  window.addEventListener("error",function(e){ window.__NW_ERR=(e.message||"err")+" @"+(e.filename||"")+":"+(e.lineno||0); });
+  window.addEventListener("unhandledrejection",function(e){ window.__NW_ERR="rejection: "+(e.reason&&e.reason.message||e.reason); });
+  if(!document.getElementById("nwStage")){
+    var st=document.createElement("div"); st.id="nwStage";
+    st.style.cssText="position:fixed;right:10px;top:10px;z-index:60;font:10px ui-monospace,monospace;color:#8AF2FF;background:rgba(8,16,28,.85);border:1px solid rgba(255,45,120,.8);border-radius:6px;padding:6px 8px;letter-spacing:.06em;white-space:pre";
+    st.textContent="NW loader";
+    document.body.appendChild(st);
+  }
+  window.__NW_STAGE="blobs";
+  setInterval(function(){
+    var el=document.getElementById("nwStage"); if(!el) return;
+    var stg=window.__NW_STAGE||"blobs";
+    var err=window.__NW_ERR?("\nERR: "+window.__NW_ERR):"";
+    var mm=window.__NW_MMERR?("\nMM: "+window.__NW_MMERR):"";
+    var menu=window.__NW_MENU?(" | "+window.__NW_MENU):"";
+    el.textContent="NW "+stg+menu+err+mm;
+    var bad=err||stg==="blobs"||stg==="eval";
+    el.style.borderColor=bad?"rgba(255,45,120,.8)":"rgba(0,245,255,.35)";
+    el.style.opacity=(stg==="play"&&!err)?"0.35":"1";
+  },500);
+  var el=document.getElementById("modsrc");
+  var SRC; try{ SRC=JSON.parse(el.textContent); }catch(e){ return fail("JSON parse: "+e); }
+  var ORDER=["three","audio","market","crypt","grid43","menu","content","world","fx","postfx","player","enemies","main"];
+  var url={};
+  try{
+    for(var i=0;i<ORDER.length;i++){
+      var name=ORDER[i];
+      var src=SRC[name];
+      if(typeof src!=="string") throw new Error("module missing in payload: "+name);
+      src=src.replace(/from\s*"three"/g,function(){return 'from "'+url.three+'"';})
+             .replace(/from\s*"\.\/([A-Za-z0-9_-]+)\.js\?v=\d+"/g,function(m,dep){
+               if(!url[dep]) throw new Error("dependency order broken: "+dep+" (in "+name+")");
+               return 'from "'+url[dep]+'"';
+             });
+      url[name]=URL.createObjectURL(new Blob([src],{type:"text/javascript"}));
+    }
+  }catch(e){ return fail(e); }
+  import(url.main).then(function(){
+    var s=document.getElementById("bootStatus"); if(s) s.remove();
+    setTimeout(function(){ if(window.__NW_ERR) fail("POST-BOOT ERROR: "+window.__NW_ERR); },2500);
+  }).catch(function(e){ fail(e); });
+  function fail(e){
+    console.error("[neon-warden] load error:",e);
+    var d=document.createElement("pre");
+    d.style.cssText="position:fixed;inset:0;z-index:99;background:#0F1419;color:#ff6b9f;padding:24px;font:12px ui-monospace,monospace;white-space:pre-wrap";
+    d.textContent="LOAD ERROR: "+(e&&e.stack||e)+"\n\nЕсли браузер блокирует локальные модули — запустите через любой статик-сервер, например:\n  python3 -m http.server 8080\nи откройте http://localhost:8080/";
+    document.body.appendChild(d);
+  }
+})();</script>
+</body></html>

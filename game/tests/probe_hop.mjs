@@ -1,0 +1,21 @@
+import { chromium } from 'playwright-core';
+const browser = await chromium.launch({ args: ['--use-gl=swiftshader', '--enable-unsafe-swiftshader', '--no-sandbox'] });
+const page = await browser.newPage({ viewport: { width: 960, height: 540 } });
+page.on('pageerror', e => console.log('PAGEERR', String(e).split('\n')[0]));
+await page.goto(new URL('../dist/neon-warden_V2.html', import.meta.url).href);
+await page.waitForTimeout(4200);
+for (const k of ['Enter','Enter','Enter']) { await page.keyboard.press(k); await page.waitForTimeout(700); }
+await page.waitForTimeout(800);
+const info = await page.evaluate(() => { window.__DBG.cancelFade(); window.__DBG.tp('n5'); window.__DBG.killall(); return window.__GAME__.roomInfo('n5'); });
+await page.waitForTimeout(300);
+await page.evaluate(([X,Y]) => { const p = window.__GAME__.player; p.x=X; p.y=Y; p.vx=0; p.vy=0; p.inv=30; }, [info.ox+10, info.oy+0.05]);
+await page.waitForTimeout(150);
+await page.keyboard.down('Space');
+for (let i=0;i<14;i++){
+  await page.waitForTimeout(70);
+  if (i===5) await page.keyboard.down('KeyD');
+  if (i===7) await page.keyboard.up('KeyD');
+  console.log(i, await page.evaluate(() => { const p=window.__GAME__.player; const o=window.__GAME__.roomInfo('n5'); return JSON.stringify({r:window.__GAME__.room, x:+(p.x-o.ox).toFixed(2), y:+(p.y-o.oy).toFixed(2), vy:+p.vy.toFixed(1), g:p.ground}); }));
+}
+await page.keyboard.up('Space'); await page.keyboard.up('KeyD').catch(()=>{});
+await browser.close();

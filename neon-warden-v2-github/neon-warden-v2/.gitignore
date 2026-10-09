@@ -1,0 +1,9 @@
+# зависимости и окружение тестов
+node_modules/
+tests/node_modules/
+package-lock.json
+# служебное/временное
+*.log
+.DS_Store
+# headless-артефакты прогонов (скриншоты-результаты тестов лежат в docs/screens)
+tests/*.png

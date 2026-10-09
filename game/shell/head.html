@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
+<title>NEON WARDEN 2 — Cybervania Metroidvania</title>
+<style>
+:root{--void:#0F1419;--cyan:#00F5FF;--magenta:#FF2D78;--violet:#7A4CFF;--gold:#FFD700;--amber:#FF8C1A;--panel:rgba(10,18,28,.78);--panel-border:rgba(0,245,255,.20);--shadow:0 18px 42px rgba(0,0,0,.6);--ui-accent:#00F5FF}
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:var(--void);color:#eafcff;font-family:"Orbitron",Inter,"Segoe UI",system-ui,sans-serif}
+canvas{display:block;position:fixed;inset:0}
+#vignette{position:fixed;inset:0;pointer-events:none;z-index:2;background:radial-gradient(120% 120% at 50% 50%,transparent 58%,rgba(0,0,0,.42) 88%,rgba(0,0,0,.72) 100%)}
+#vignette.lowhp{animation:lowhp 1.4s ease-in-out infinite}
+@keyframes lowhp{0%,100%{box-shadow:inset 0 0 90px rgba(255,20,60,.16)}50%{box-shadow:inset 0 0 160px rgba(255,20,60,.34)}}
+body.jammed #hud{animation:jam .18s steps(2) infinite}
+@keyframes jam{0%{transform:translateX(0)}50%{transform:translateX(2px)}}
+#screenFade{position:fixed;inset:0;background:#000;opacity:0;pointer-events:none;z-index:6;transition:opacity .1s linear}
+#hud{position:fixed;inset:0;pointer-events:none;z-index:3;text-shadow:0 2px 10px rgba(0,0,0,.9)}
+#hud::after{content:"";position:absolute;inset:0;pointer-events:none;opacity:.03;background:repeating-linear-gradient(0deg,transparent 0,transparent 2px,rgba(255,255,255,.9) 3px)}
+.top{position:absolute;left:22px;right:22px;top:18px;display:flex;justify-content:space-between;align-items:flex-start;gap:16px}
+.brand{font-weight:900;letter-spacing:.12em;text-transform:uppercase;font-size:13px;color:#fff}.brand b{color:var(--ui-accent)}
+.stats{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.pill{background:var(--panel);border:1px solid var(--panel-border);backdrop-filter:blur(10px);padding:8px 11px;border-radius:8px;font-size:11px;letter-spacing:.12em;text-transform:uppercase;font-weight:700;color:#D6EAF0}
+.bar{width:140px;height:7px;background:#0E1822;border:1px solid rgba(255,255,255,.08);border-radius:999px;overflow:hidden;display:inline-block;vertical-align:middle;margin-left:8px}.fill{height:100%;background:linear-gradient(90deg,var(--magenta),#FFBD5A);display:block}
+.pill.full{border-color:rgba(234,251,255,.55)}
+#boss{position:absolute;left:50%;top:26px;transform:translateX(-50%);width:min(520px,72vw);display:none;text-align:center;z-index:4}.bossname{font-weight:900;letter-spacing:.12em;text-transform:uppercase;font-size:11px;color:#FF6BBD;text-shadow:0 0 14px rgba(255,45,120,.6)}.bossbar{height:9px;background:#160b16;border:1px solid rgba(255,45,120,.4);border-radius:999px;overflow:hidden;margin-top:5px}.bossfill{height:100%;background:linear-gradient(90deg,#FF2D78,#FF8C1A);display:block}
+#hint{position:absolute;left:50%;bottom:26px;transform:translateX(-50%);padding:9px 13px;border:1px solid rgba(255,255,255,.14);background:rgba(6,12,20,.72);border-radius:8px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#C9D7DF;white-space:nowrap}
+#message{position:absolute;left:50%;top:65%;transform:translate(-50%,-50%);font-weight:900;letter-spacing:.12em;text-transform:uppercase;color:#fff;opacity:0;font-size:16px;text-align:center;z-index:4;text-shadow:0 2px 12px rgba(0,0,0,.9)}
+#message.flash{animation:mflash 2.2s ease forwards}
+@keyframes mflash{0%{opacity:0;transform:translate(-50%,-46%)}8%{opacity:1;transform:translate(-50%,-50%)}80%{opacity:1}100%{opacity:0}}
+#zone{position:absolute;left:50%;top:36%;transform:translate(-50%,-50%);font-weight:900;letter-spacing:.22em;text-transform:uppercase;color:var(--ui-accent);opacity:0;font-size:13px;text-align:center;text-shadow:0 0 18px var(--ui-accent);pointer-events:none;transition:opacity .5s;z-index:4}
+#room{position:absolute;left:22px;top:58px;font:10px ui-monospace,monospace;letter-spacing:.12em;text-transform:uppercase;color:var(--ui-accent);opacity:.85}
+#minimap{position:absolute;right:22px;top:64px;width:168px;height:126px;background:rgba(10,18,28,.88);border:1px solid var(--panel-border);border-radius:8px}
+#focusBar{position:fixed;left:50%;bottom:64px;transform:translateX(-50%);width:170px;height:8px;background:rgba(8,16,28,.85);border:1px solid rgba(234,251,255,.4);border-radius:999px;overflow:hidden;display:none;z-index:5}
+#focusFill{height:100%;width:0%;background:linear-gradient(90deg,#8AF2FF,#EAFBFF);display:block}
+.dmgpop{position:fixed;z-index:20;font-weight:1000;font-size:16px;letter-spacing:.08em;color:#FF6B9F;text-shadow:0 2px 6px rgba(0,0,0,.7);pointer-events:none;transform:translate(-50%,-50%);animation:dmgup .65s ease-out forwards}.dmgpop.good{color:#FFE66D}
+@keyframes dmgup{0%{opacity:1;transform:translate(-50%,-20%)}100%{opacity:0;transform:translate(-50%,-90%)}}
+#controls{position:absolute;right:22px;bottom:18px;color:#7A8A9A;font-size:10px;line-height:1.8;text-align:right;letter-spacing:.1em;text-transform:uppercase}
+.key{display:inline-block;min-width:20px;text-align:center;border:1px solid rgba(255,255,255,.2);border-radius:4px;padding:0 4px;font-weight:800;color:#C9D7DF}
+#version{position:fixed;right:14px;bottom:4px;font:10px ui-monospace,monospace;color:#6D8195;opacity:.7;z-index:5}
+#shopOverlay{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:420px;max-width:88vw;background:rgba(8,16,28,.96);border:1px solid rgba(0,245,255,.32);border-radius:10px;padding:18px;display:none;z-index:18;pointer-events:auto}
+#shopOverlay .shopTitle{font:900 12px ui-monospace,monospace;letter-spacing:.18em;color:#00F5FF;margin-bottom:10px}
+#shopOverlay .shopRow{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border:1px solid rgba(255,255,255,.1);border-radius:8px;margin-bottom:8px}
+#shopOverlay .shopBtn{padding:6px 10px;border:1px solid var(--cyan);background:rgba(0,245,255,.12);color:#EAF6FF;border-radius:6px;font:800 11px ui-monospace,monospace;cursor:pointer}
+#ending{position:fixed;inset:0;background:radial-gradient(120% 120% at 50% 50%,rgba(0,245,255,.08),rgba(5,8,16,.96) 70%);display:none;align-items:center;justify-content:center;flex-direction:column;z-index:22;text-align:center}
+#ending .endTitle{font:950 42px "Orbitron",monospace;letter-spacing:.14em;color:#00F5FF;text-shadow:0 0 22px rgba(0,245,255,.55)}
+#ending .endSub{font:700 12px ui-monospace,monospace;letter-spacing:.22em;color:#FFEAA0;margin-top:10px}
+#ending .endStats{font:500 11px ui-monospace,monospace;color:#C9D7DF;margin-top:18px;line-height:1.8}
+#title{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);text-align:center;z-index:4;display:none}
+.title{font-size:clamp(44px,8.5vw,94px);font-weight:950;letter-spacing:.06em;line-height:.88;color:#fff}
+.title .neon{color:transparent;background:linear-gradient(90deg,var(--magenta) 6%,#FF6BBD 38%,var(--violet) 88%);-webkit-background-clip:text;background-clip:text}
+.title .warden{color:#EEF6FF;letter-spacing:.18em;font-size:.62em;display:block;margin-top:.1em}
+.sub{margin-top:16px;color:#9AA8B8;letter-spacing:.28em;font-size:11px;text-transform:uppercase;font-weight:700}
+#titleItems{margin-top:22px;display:flex;flex-direction:column;gap:10px;align-items:center}
+.tItem{padding:10px 26px;border:1px solid rgba(255,255,255,.16);background:rgba(10,18,28,.78);border-radius:8px;font:800 12px "Orbitron",sans-serif;letter-spacing:.18em;text-transform:uppercase;color:#C9D7DF;min-width:260px;text-align:center}
+.tItem.sel{border-color:var(--cyan);color:#fff;background:linear-gradient(180deg,rgba(0,245,255,.18),rgba(0,245,255,.05))}
+#splash{position:fixed;inset:0;background:var(--void);display:flex;align-items:center;justify-content:center;flex-direction:column;z-index:30;transition:opacity .5s}
+#splash .spBrand{font:950 clamp(30px,5vw,58px) "Orbitron",sans-serif;letter-spacing:.14em;color:transparent;background:linear-gradient(90deg,var(--magenta),var(--violet));-webkit-background-clip:text;background-clip:text}
+#splash .spSub{margin-top:14px;font:700 11px ui-monospace,monospace;letter-spacing:.3em;color:#7A8A9A}
+#creation{position:fixed;inset:0;background:rgba(5,8,16,.9);display:none;align-items:center;justify-content:center;flex-direction:column;z-index:30}
+#creation .crTitle{font:950 clamp(22px,3.4vw,34px) "Orbitron",sans-serif;letter-spacing:.16em;color:transparent;background:linear-gradient(90deg,var(--cyan),var(--violet));-webkit-background-clip:text;background-clip:text}
+#creation .crLabel{margin-top:18px;font:800 11px ui-monospace,monospace;letter-spacing:.26em;color:#7A8A9A}
+#crName{margin-top:10px;width:min(320px,80vw);padding:12px 14px;background:rgba(10,18,28,.9);border:1px solid rgba(0,245,255,.35);border-radius:8px;color:#EAF6FF;font:800 14px "Orbitron",sans-serif;letter-spacing:.14em;text-transform:uppercase;text-align:center;outline:none}
+#crPaths{margin-top:14px;display:flex;flex-direction:column;gap:8px;min-width:min(380px,86vw)}
+.crPath{padding:11px 16px;border:1px solid rgba(255,255,255,.14);background:rgba(10,18,28,.78);border-radius:8px;font:800 11px "Orbitron",sans-serif;letter-spacing:.14em;text-transform:uppercase;color:#C9D7DF;display:flex;justify-content:space-between;gap:12px;cursor:pointer}
+.crPath.sel{border-color:var(--magenta);color:#fff}
+.crPath span{color:#8EA0B2;font-weight:600}
+#creation .crHint{margin-top:16px;font:700 10px ui-monospace,monospace;letter-spacing:.2em;color:#7A8A9A}
+#pause{position:fixed;inset:0;background:rgba(5,8,16,.82);display:none;align-items:center;justify-content:center;flex-direction:column;z-index:26}
+#pause .pTitle{font:950 clamp(28px,4.4vw,52px) "Orbitron",sans-serif;letter-spacing:.2em;color:#EEF6FF}
+#pause .pHint{margin-top:20px;font:800 11px ui-monospace,monospace;letter-spacing:.2em;color:#7A8A9A}
+</style>
+</head>
+<body>
+<div id="vignette"></div><div id="screenFade"></div>
+<div id="hud">
+  <div class="top">
+    <div class="brand">CYBER<span style="color:var(--cyan)">VANIA</span> <b>/// NEON WARDEN 2</b></div>
+    <div class="stats">
+      <div class="pill">HP <span class="bar"><i id="hp" class="fill" style="width:100%"></i></span></div>
+      <div class="pill">RAM <b id="ram">100</b></div>
+      <div class="pill">EDDIES <b id="shards">0</b></div>
+      <div class="pill">КОРЫ <b id="eddies">0/3</b></div><span id="abs" style="display:contents"></span>
+    </div>
+  </div>
+  <div id="boss"><div class="bossname">БОСС</div><div class="bossbar"><i id="bossfill" class="bossfill" style="width:100%"></i></div></div>
+  <div id="hint">WASD · SPACE · J · K · F · L · E · TAB — карта</div>
+  <div id="room">ROOM —</div>
+  <canvas id="minimap" width="168" height="126"></canvas>
+  <div id="focusBar"><i id="focusFill"></i></div>
+  <div id="message"></div><div id="zone"></div>
+  <div id="controls"><span class="key">J</span> MELEE <span class="key">S+J</span> POGO <span class="key">W+J</span> UP <span class="key">K</span> DASH <span class="key">F</span> FOCUS <span class="key">L</span> HACK <span class="key">E</span> ВЗАИМОДЕЙСТВИЕ<br><span class="key">WASD</span> MOVE <span class="key">SPACE</span> JUMP <span class="key">TAB</span> MAP <span class="key">F1</span> TP <span class="key">F2</span> COL <span class="key">F4</span> GRAPH <span class="key">F5</span> AI <span class="key">F6</span> PHYS <span class="key">P</span> QUAL <span class="key">F9</span> RESET</div>
+  <div id="version">BUILD v2.0 // METROID-NES ROOM GRAPH</div>
+</div>
+<div id="title"><div class="title"><span class="neon">NEON</span><span class="warden">WARDEN 2</span></div><div class="sub">CYBERPUNK METROIDVANIA // ROOM GRAPH BUILD</div><div id="titleItems"></div></div>
+<div id="splash"><div class="spBrand">CYBERVANIA</div><div class="spSub">DSH PROD // 2309 // V2</div></div>
+<div id="creation"><div class="crTitle">СОЗДАНИЕ ВАРДЕНА</div><div class="crLabel">ИМЯ</div><input id="crName" maxlength="12" placeholder="ВАРДЕН" autocomplete="off" spellcheck="false"/><div class="crLabel">ПУТЬ</div><div id="crPaths"></div><div class="crHint" id="crHint">РЕЖИМ ПУТИ: 1/2/3 или W/S — путь · TAB — ввод имени · ENTER — старт · ESC — назад</div></div>
+<div id="pause"><div class="pTitle">ПАУЗА</div><div class="pHint">ESC / ENTER — продолжить · X — в меню · TAB — карта мира</div></div>
+<div id="shopOverlay"><div class="shopTitle" id="shopTitle">МАГАЗИН</div><div class="shopRow"><span><b>+25 MAX HP</b> — 120 EDDIES</span><button class="shopBtn" id="shopBuyHp">BUY [1]</button></div><div class="shopRow"><span><b>+4 MELEE DMG</b> — 80 EDDIES</span><button class="shopBtn" id="shopBuyDmg">BUY [2]</button></div><div style="font:600 10px ui-monospace,monospace;color:#7A8A9A">ESC — закрыть</div></div>
+<div id="ending"><div class="endTitle">СИСТЕМА ВЗЛОМАНА</div><div class="endSub">ГЛИТЧ-МАТЬ ПОВЕРЖЕНА // NEON WARDEN 2</div><div class="endStats" id="endingStats"></div></div>
+<script type="application/json" id="modsrc">__MODSRC__</script>
+<script>(function(){
+  window.__NW_ERR=null;
+  window.addEventListener("error",function(e){ window.__NW_ERR=(e.message||"err")+" @"+(e.lineno||0); });
+  window.addEventListener("unhandledrejection",function(e){ window.__NW_ERR="rejection: "+(e.reason&&e.reason.message||e.reason); });
+  var el=document.getElementById("modsrc"); var SRC;
+  try{ SRC=JSON.parse(el.textContent); }catch(e){ return fail("JSON parse: "+e); }
+  var ORDER=["three","audio","menu","biomes","rooms","worldgraph","world","fx","postfx","levelbuild","enemydefs","player","mapui","debugx","main"];
+  var url={};
+  try{
+    for(var i=0;i<ORDER.length;i++){
+      var name=ORDER[i], src=SRC[name];
+      if(typeof src!=="string") throw new Error("module missing: "+name);
+      src=src.replace(/from\s*"three"/g,function(){return 'from "'+url.three+'"';})
+             .replace(/from\s*"\.\/([A-Za-z0-9_-]+)\.js(?:\?v=\d+)?"/g,function(m,dep){
+                if(!url[dep]) throw new Error("dependency order broken: "+dep+" (in "+name+")");
+                return 'from "'+url[dep]+'"';});
+      url[name]=URL.createObjectURL(new Blob([src],{type:"text/javascript"}));
+    }
+  }catch(e){ return fail(e); }
+  import(url.main).then(function(){ window.__NW_STAGE="play"; }).catch(fail);
+  function fail(e){
+    console.error("[neon-warden2] load error:",e);
+    var d=document.createElement("pre");
+    d.style.cssText="position:fixed;inset:0;z-index:99;background:#0F1419;color:#ff6b9f;padding:24px;font:12px ui-monospace,monospace;white-space:pre-wrap";
+    d.textContent="LOAD ERROR: "+(e&&e.stack||e)+"\n\nЗапускайте через статик-сервер: python3 -m http.server 8080";
+    document.body.appendChild(d);
+  }
+})();</script>
+</body></html>
